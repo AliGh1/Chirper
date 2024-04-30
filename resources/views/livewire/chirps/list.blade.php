@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Chirp;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Livewire\Attributes\On;
 use Livewire\Volt\Component;
@@ -48,6 +49,16 @@ new class extends Component {
 
         $this->getChirps();
     }
+
+    public function follow(User $user): void
+    {
+        auth()->user()->follow($user);
+    }
+
+    public function unfollow(User $user): void
+    {
+        auth()->user()->unfollow($user);
+    }
 }; ?>
 
 <div class="mt-6 bg-white shadow-sm rounded-lg divide-y">
@@ -86,6 +97,17 @@ new class extends Component {
                                 </x-dropdown-link>
                             </x-slot>
                         </x-dropdown>
+                    @else
+                        @unless(auth()->user()->hasFollowing($chirp->user))
+                            <x-outline-success-button wire:click="follow({{ $chirp->user->id }})" wire:key="follow">
+                                {{ __('Follow') }}
+                            </x-outline-success-button>
+                        @else
+                            <x-outline-danger-button wire:click="unfollow({{ $chirp->user->id }})"
+                                                     wire:confirm="Are you sure to unfollow this user?" wire:key="unfollow">
+                                {{ __('Unfollow') }}
+                            </x-outline-danger-button>
+                        @endunless
                     @endif
                 </div>
                 @if ($chirp->is($editing))
