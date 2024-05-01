@@ -9,7 +9,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 use Throwable;
 
-class SendChirpCreatedNotifications //implements ShouldQueue
+class SendChirpCreatedNotifications implements ShouldQueue
 {
     /**
      * Create the event listener.
@@ -24,9 +24,9 @@ class SendChirpCreatedNotifications //implements ShouldQueue
      */
     public function handle(ChirpCreated $event): void
     {
-        foreach (User::whereNot('id', $event->chirp->user_id)->cursor() as $user) {
-            $user->notify(new NewChirp($event->chirp));
+        // Send email to user followers
+        foreach ($event->chirp->user->followers()->cursor() as $follower) {
+            $follower->notify(new NewChirp($event->chirp));
         }
-
     }
 }

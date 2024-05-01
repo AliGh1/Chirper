@@ -53,11 +53,15 @@ new class extends Component {
     public function follow(User $user): void
     {
         auth()->user()->follow($user);
+
+        $this->getChirps();
     }
 
     public function unfollow(User $user): void
     {
         auth()->user()->unfollow($user);
+
+        $this->getChirps();
     }
 }; ?>
 
