@@ -17,6 +17,7 @@ new class extends Component {
     }
 
     #[On('chirp-created')]
+    #[On('echo:chirps,ChirpCreated')]
     public function getChirps(): void
     {
         $this->chirps = Chirp::with('user')
@@ -53,15 +54,11 @@ new class extends Component {
     public function follow(User $user): void
     {
         auth()->user()->follow($user);
-
-        $this->getChirps();
     }
 
     public function unfollow(User $user): void
     {
         auth()->user()->unfollow($user);
-
-        $this->getChirps();
     }
 }; ?>
 
