@@ -8,8 +8,8 @@ use Livewire\Volt\Component;
 
 new class extends Component {
     public Collection $chirps;
-
     public ?Chirp $editing = null;
+    public bool $isFollowingMode = false;
 
     public function mount(): void
     {
@@ -20,7 +20,12 @@ new class extends Component {
     #[On('echo:chirps,ChirpCreated')]
     public function getChirps(): void
     {
+        $followingIds = $this->isFollowingMode ?
+            auth()->user()->following()->pluck('id')->push(auth()->id())->toArray() :
+            [];
+
         $this->chirps = Chirp::with('user')
+            ->when($followingIds, fn($query) => $query->whereIn('user_id', $followingIds))
             ->latest()
             ->get();
     }
@@ -28,26 +33,21 @@ new class extends Component {
     public function edit(Chirp $chirp): void
     {
         $this->editing = $chirp;
-
         $this->getChirps();
     }
-
 
     #[On('chirp-edit-canceled')]
     #[On('chirp-updated')]
     public function disableEditing(): void
     {
         $this->editing = null;
-
         $this->getChirps();
     }
 
     public function delete(Chirp $chirp): void
     {
         $this->authorize('delete', $chirp);
-
         $chirp->delete();
-
         $this->getChirps();
     }
 
@@ -60,9 +60,22 @@ new class extends Component {
     {
         auth()->user()->unfollow($user);
     }
+
+    public function toggleCurrentChirpsMode(): void
+    {
+        $this->isFollowingMode = !$this->isFollowingMode;
+        $this->getChirps();
+    }
 }; ?>
 
 <div class="mt-6 bg-white shadow-sm rounded-lg divide-y">
+    <div class="flex">
+        <x-tab-item class="basis-1/2 py-2" :active="!$this->isFollowingMode"
+                    wire:click="toggleCurrentChirpsMode">{{ __('Everyone') }}</x-tab-item>
+        <x-tab-item class="basis-1/2 py-2" :active="$this->isFollowingMode"
+                    wire:click="toggleCurrentChirpsMode">{{ __('Following') }}</x-tab-item>
+    </div>
+
     @foreach ($chirps as $chirp)
         <div class="p-6 flex space-x-2" wire:key="{{ $chirp->id }}">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600 -scale-x-100" fill="none"
@@ -84,8 +97,10 @@ new class extends Component {
                         <x-dropdown>
                             <x-slot name="trigger">
                                 <button>
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-                                        <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400"
+                                         viewBox="0 0 20 20" fill="currentColor">
+                                        <path
+                                            d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"/>
                                     </svg>
                                 </button>
                             </x-slot>
@@ -93,7 +108,8 @@ new class extends Component {
                                 <x-dropdown-link wire:click="edit({{ $chirp->id }})">
                                     {{ __('Edit') }}
                                 </x-dropdown-link>
-                                <x-dropdown-link wire:click="delete({{ $chirp->id }})" wire:confirm="Are you sure to delete this chirp?">
+                                <x-dropdown-link wire:click="delete({{ $chirp->id }})"
+                                                 wire:confirm="Are you sure to delete this chirp?">
                                     {{ __('Delete') }}
                                 </x-dropdown-link>
                             </x-slot>
@@ -105,14 +121,15 @@ new class extends Component {
                             </x-outline-success-button>
                         @else
                             <x-outline-danger-button wire:click="unfollow({{ $chirp->user->id }})"
-                                                     wire:confirm="Are you sure to unfollow this user?" wire:key="unfollow">
+                                                     wire:confirm="Are you sure to unfollow this user?"
+                                                     wire:key="unfollow">
                                 {{ __('Unfollow') }}
                             </x-outline-danger-button>
                         @endunless
                     @endif
                 </div>
                 @if ($chirp->is($editing))
-                    <livewire:chirps.edit :chirp="$chirp" :key="$chirp->id" />
+                    <livewire:chirps.edit :chirp="$chirp" :key="$chirp->id"/>
                 @else
                     <p class="mt-4 text-lg text-gray-900">{{ $chirp->message }}</p>
                 @endif
