@@ -70,14 +70,15 @@ new class extends Component {
 
 <div class="mt-6 bg-white shadow-sm rounded-lg divide-y">
     <div class="flex">
-        <x-tab-item class="basis-1/2 py-2" :active="!$this->isFollowingMode"
-                    wire:click="toggleCurrentChirpsMode">{{ __('Everyone') }}</x-tab-item>
-        <x-tab-item class="basis-1/2 py-2" :active="$this->isFollowingMode"
-                    wire:click="toggleCurrentChirpsMode">{{ __('Following') }}</x-tab-item>
+        <x-tab-item class="basis-1/2 py-2" :active="!$isFollowingMode" :disabled="!$isFollowingMode"
+                    wire:click="toggleCurrentChirpsMode" wire:loading.attr="disabled">{{ __('Everyone') }}</x-tab-item>
+        <x-tab-item class="basis-1/2 py-2" :active="$isFollowingMode" :disabled="$isFollowingMode"
+                    wire:click="toggleCurrentChirpsMode" wire:loading.attr="disabled">{{ __('Following') }}</x-tab-item>
     </div>
 
     @foreach ($chirps as $chirp)
-        <div class="p-6 flex space-x-2" wire:key="{{ $chirp->id }}">
+        <div class="p-6 flex space-x-2" wire:key="{{ $chirp->id }}"
+             wire:loading.class="opacity-60 transition duration-150 ease-in-out" wire:target="toggleCurrentChirpsMode">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600 -scale-x-100" fill="none"
                  viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round"
